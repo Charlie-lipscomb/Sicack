@@ -13,13 +13,13 @@ import { getDatabase } from 'firebase/database'
 
 // PLACEHOLDER: Replace these values with your Firebase project config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyB-IRi1zY2uxBjmzIHoSTSUFwRYaXHoQ1c",
+  authDomain: "sicack-c8858.firebaseapp.com",
+  databaseURL: "https://sicack-c8858-default-rtdb.firebaseio.com",
+  projectId: "sicack-c8858",
+  storageBucket: "sicack-c8858.firebasestorage.app",
+  messagingSenderId: "389613827258",
+  appId: "1:389613827258:web:b9832bffcc52eb6dcf3e83"
 }
 
 // Initialize Firebase (will work once you add real credentials)
@@ -28,7 +28,7 @@ let database = null
 
 try {
   // Only initialize if config looks real (not placeholder)
-  if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+  if (firebaseConfig.apiKey !== "AIzaSyB-IRi1zY2uxBjmzIHoSTSUFwRYaXHoQ1c") {
     app = initializeApp(firebaseConfig)
     database = getDatabase(app)
     console.log("Firebase Realtime Database connected")
