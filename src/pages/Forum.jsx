@@ -1,49 +1,60 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { ref, onValue, push } from 'firebase/database'
+import { database } from '../firebase'
 import PostCard from '../components/PostCard'
 import CreatePost from '../components/CreatePost'
 import ForumList from '../components/ForumList'
-import { initialPosts, forums } from '../data/mockData'
+import { forums } from '../data/mockData'
 
 export default function Forum() {
   const { forumName } = useParams()
   const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const forum = forums.find(
     (f) => f.name.toLowerCase() === forumName?.toLowerCase()
   )
 
   useEffect(() => {
-    const saved = localStorage.getItem('reddit_clone_posts')
-    let allPosts = initialPosts
-    if (saved) {
-      try {
-        allPosts = JSON.parse(saved)
-      } catch {
-        /* keep initial */
+    const postsRef = ref(database, 'posts')
+    const unsubscribe = onValue(
+      postsRef,
+      (snapshot) => {
+        const data = snapshot.val()
+        if (data) {
+          const postList = Object.entries(data)
+            .map(([id, post]) => ({ id, ...post }))
+            .filter(
+              (p) => p.forum?.toLowerCase() === forumName?.toLowerCase()
+            )
+            .sort((a, b) => b.createdAt - a.createdAt)
+          setPosts(postList)
+        } else {
+          setPosts([])
+        }
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Firebase read error:', error)
+        setPosts([])
+        setLoading(false)
       }
-    }
-    const filtered = allPosts.filter(
-      (p) => p.forum.toLowerCase() === forumName?.toLowerCase()
     )
-    setPosts(filtered.sort((a, b) => b.createdAt - a.createdAt))
+    return () => unsubscribe()
   }, [forumName])
 
   const handlePostCreated = (newPost) => {
-    const saved = localStorage.getItem('reddit_clone_posts')
-    let allPosts = initialPosts
-    if (saved) {
-      try {
-        allPosts = JSON.parse(saved)
-      } catch {
-        /* keep initial */
-      }
-    }
-    const updated = [newPost, ...allPosts]
-    localStorage.setItem('reddit_clone_posts', JSON.stringify(updated))
-    if (newPost.forum.toLowerCase() === forumName?.toLowerCase()) {
-      setPosts((prev) => [newPost, ...prev])
-    }
+    const postsRef = ref(database, 'posts')
+    push(postsRef, {
+      title: newPost.title,
+      body: newPost.body,
+      forum: newPost.forum,
+      author: newPost.author,
+      createdAt: newPost.createdAt,
+      upvotes: newPost.upvotes,
+      comments: newPost.comments,
+    }).catch((err) => console.error('Firebase write error:', err))
   }
 
   if (!forum) {
@@ -53,6 +64,10 @@ export default function Forum() {
         <p>r/{forumName} does not exist.</p>
       </div>
     )
+  }
+
+  if (loading) {
+    return <div className="empty-state">Loading posts...</div>
   }
 
   return (

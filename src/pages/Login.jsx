@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -7,10 +7,11 @@ export default function Login() {
   const { login, user } = useAuth()
   const navigate = useNavigate()
 
-  if (user) {
-    navigate('/')
-    return null
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/')
+    }
+  }, [user, navigate])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -18,6 +19,10 @@ export default function Login() {
       login(username.trim())
       navigate('/')
     }
+  }
+
+  if (user) {
+    return null
   }
 
   return (
@@ -41,8 +46,7 @@ export default function Login() {
         </button>
       </form>
       <p className="login-note">
-        This is a demo login (no password). Your session is stored locally.
-        Connect Firebase Auth later for real authentication.
+        Demo login (no password). Your session is stored locally.
       </p>
     </div>
   )

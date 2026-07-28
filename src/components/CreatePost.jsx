@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { forums } from '../data/mockData'
 
@@ -12,7 +13,9 @@ export default function CreatePost({ onPostCreated, defaultForum = '' }) {
   if (!user) {
     return (
       <div className="create-post">
-        <p>Please <a href="/login">log in</a> to create a post.</p>
+        <p>
+          Please <Link to="/login">log in</Link> to create a post.
+        </p>
       </div>
     )
   }
@@ -22,11 +25,6 @@ export default function CreatePost({ onPostCreated, defaultForum = '' }) {
     if (!title.trim()) return
 
     setSubmitting(true)
-
-    // In a real app this would write to Firebase Realtime Database:
-    // import { ref, push } from 'firebase/database'
-    // import { database } from '../firebase'
-    // push(ref(database, 'posts'), newPost)
 
     const newPost = {
       id: Date.now().toString(),
