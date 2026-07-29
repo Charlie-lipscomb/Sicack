@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { isAdminUser, publicDisplayName } from '../utils/admin'
 import { useUnreadCount } from '../hooks/useUnread'
@@ -12,21 +12,21 @@ export default function Header() {
     <header className="header">
       <div className="header-inner">
         <Link to="/" className="logo">
-          <span className="logo-mark" aria-hidden="true" />
+          <span className="logo-mark" aria-hidden="true">S</span>
           <span className="logo-text">Sicack</span>
         </Link>
 
         <nav className="nav-links">
           {loading ? (
-            <span className="nav-muted">…</span>
+            <span className="nav-muted">Loading…</span>
           ) : user ? (
             <>
               {isAdminUser(user) && (
-                <Link to="/admin" className="nav-link nav-admin">
+                <Link to="/admin" className="btn btn-secondary btn-sm">
                   Admin
                 </Link>
               )}
-              <Link to="/messages" className="nav-link nav-messages">
+              <Link to="/messages" className="btn btn-secondary btn-sm nav-messages">
                 Messages
                 {unread > 0 && (
                   <span className="notif-badge" aria-label={`${unread} unread`}>
@@ -38,13 +38,13 @@ export default function Header() {
                 <span className="user-avatar">{displayName.charAt(0).toUpperCase()}</span>
                 <span className="user-name">{displayName}</span>
               </span>
-              <button type="button" className="nav-link nav-btn" onClick={() => logout()}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => logout()}>
                 Sign out
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="nav-link">
+              <Link to="/login" className="btn btn-ghost btn-sm">
                 Sign in
               </Link>
               <Link to="/login" className="btn btn-primary btn-sm">
