@@ -11,18 +11,44 @@ import { auth, database } from '../firebase'
 
 const AuthContext = createContext(null)
 
+async function syncUserIndexes(uid, username, email) {
+  if (!uid) return
+  const name = (username || 'member').trim()
+  const mail = (email || '').trim().toLowerCase()
+
+  await set(ref(database, `users/${uid}`), {
+    username: name,
+    email: mail,
+    updatedAt: Date.now(),
+  })
+
+  if (name) {
+    await set(ref(database, `usernames/${name.toLowerCase()}`), uid)
+  }
+  if (mail) {
+    await set(ref(database, `emails/${mail.replace(/\./g, ',')}`), uid)
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        const username =
+          firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'member'
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'member',
+          username,
         })
+        try {
+          await syncUserIndexes(firebaseUser.uid, username, firebaseUser.email)
+        } catch (e) {
+          console.warn('[Sicack] could not sync user index', e.message)
+        }
       } else {
         setUser(null)
       }
@@ -42,19 +68,7 @@ export function AuthProvider({ children }) {
 
     const cred = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(cred.user, { displayName: cleanName })
-
-    const profile = {
-      username: cleanName,
-      email: email.trim().toLowerCase(),
-      createdAt: Date.now(),
-    }
-
-    await set(ref(database, `users/${cred.user.uid}`), profile)
-    await set(ref(database, `usernames/${nameKey}`), cred.user.uid)
-    await set(
-      ref(database, `emails/${email.trim().toLowerCase().replace(/\./g, ',')}`),
-      cred.user.uid
-    )
+    await syncUserIndexes(cred.user.uid, cleanName, email)
 
     setUser({
       uid: cred.user.uid,
@@ -66,10 +80,13 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const cred = await signInWithEmailAndPassword(auth, email, password)
+    const username =
+      cred.user.displayName || cred.user.email?.split('@')[0] || 'member'
+    await syncUserIndexes(cred.user.uid, username, cred.user.email)
     setUser({
       uid: cred.user.uid,
       email: cred.user.email,
-      username: cred.user.displayName || cred.user.email?.split('@')[0] || 'member',
+      username,
     })
     return cred.user
   }
