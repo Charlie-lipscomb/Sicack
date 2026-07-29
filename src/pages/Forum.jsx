@@ -4,40 +4,37 @@ import CreatePost from '../components/CreatePost'
 import ForumList from '../components/ForumList'
 import ConnectionStatus from '../components/ConnectionStatus'
 import { usePosts } from '../hooks/usePosts'
-import { forums } from '../data/mockData'
+import { useCommunities } from '../hooks/useCommunities'
 
 export default function Forum() {
   const { forumName } = useParams()
-  const forum = forums.find((f) => f.name.toLowerCase() === forumName?.toLowerCase())
+  const { communities } = useCommunities()
+  const community = communities.find(
+    (c) => c.name.toLowerCase() === forumName?.toLowerCase()
+  )
   const { posts, status, error, createPost } = usePosts(forumName)
 
   const handlePostCreated = async (newPost) => {
     try {
       await createPost(newPost)
     } catch (err) {
-      alert('Could not save post. Check Firebase rules.\n\n' + err.message)
+      alert('Could not save post.\n\n' + err.message)
     }
   }
 
-  if (!forum) {
-    return (
-      <div className="empty-state animate-in">
-        <h2>Community not found</h2>
-        <p>{forumName} doesn’t exist yet.</p>
-      </div>
-    )
-  }
+  const title = community?.name || forumName
+  const description = community?.description || 'Community on Sicack'
 
   return (
     <div className="content-layout">
       <div className="feed">
         <div className="forum-header animate-in">
-          <span className="forum-badge">{forum.name}</span>
-          <h1>{forum.name}</h1>
-          <p>{forum.description}</p>
+          <span className="forum-badge">Community</span>
+          <h1>{title}</h1>
+          <p>{description}</p>
         </div>
         <ConnectionStatus status={status} error={error} />
-        <CreatePost onPostCreated={handlePostCreated} defaultForum={forum.name} />
+        <CreatePost onPostCreated={handlePostCreated} defaultCommunity={forumName} />
         <div className="post-list">
           {status === 'connecting' ? (
             <div className="empty-state animate-in">Loading…</div>

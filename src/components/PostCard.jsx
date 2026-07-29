@@ -12,21 +12,14 @@ function timeAgo(timestamp) {
 }
 
 export default function PostCard({ post, style }) {
+  const community = post.community || post.forum || 'general'
+
   return (
     <article className="post-card animate-in" style={style}>
-      <div className="post-score">
-        <button type="button" className="vote-btn" aria-label="Upvote">
-          ⌃
-        </button>
-        <span>{post.upvotes ?? 0}</span>
-        <button type="button" className="vote-btn" aria-label="Downvote">
-          ⌄
-        </button>
-      </div>
       <div className="post-content">
         <div className="post-meta">
-          <Link to={`/r/${post.forum}`} className="forum-pill">
-            {post.forum}
+          <Link to={`/c/${community}`} className="forum-pill">
+            {community}
           </Link>
           <span className="dot">·</span>
           <span>{post.author}</span>
@@ -35,9 +28,6 @@ export default function PostCard({ post, style }) {
         </div>
         <h2 className="post-title">{post.title}</h2>
         {post.body ? <p className="post-body">{post.body}</p> : null}
-        <div className="post-actions">
-          <span>{post.comments ?? 0} replies</span>
-        </div>
       </div>
     </article>
   )

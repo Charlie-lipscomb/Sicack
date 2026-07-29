@@ -27,7 +27,7 @@ export default function Header() {
           <input
             type="search"
             className="search-input"
-            placeholder="Search communities & posts…"
+            placeholder="Search posts…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -38,6 +38,9 @@ export default function Header() {
             <span className="user-info">…</span>
           ) : user ? (
             <>
+              <Link to="/messages" className="btn btn-ghost">
+                Messages
+              </Link>
               <span className="user-chip">
                 <span className="user-avatar">{user.username.charAt(0).toUpperCase()}</span>
                 {user.username}

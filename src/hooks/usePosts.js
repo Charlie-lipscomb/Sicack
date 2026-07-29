@@ -1,15 +1,10 @@
 import { useState, useEffect } from 'react'
-import { ref, onValue, push, get, set } from 'firebase/database'
+import { ref, onValue, push } from 'firebase/database'
 import { database } from '../firebase'
-import { initialPosts } from '../data/mockData'
 
-/**
- * Live posts from Firebase Realtime Database.
- * Optionally filter by forum name.
- */
-export function usePosts(forumName = null) {
+export function usePosts(communityName = null) {
   const [posts, setPosts] = useState([])
-  const [status, setStatus] = useState('connecting') // connecting | live | error
+  const [status, setStatus] = useState('connecting')
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -17,43 +12,21 @@ export function usePosts(forumName = null) {
 
     const unsubscribe = onValue(
       postsRef,
-      async (snapshot) => {
+      (snapshot) => {
         const data = snapshot.val()
-
         if (!data) {
-          // Empty DB: seed sample posts once
-          try {
-            const seededRef = ref(database, 'meta/seeded')
-            const seededSnap = await get(seededRef)
-            if (!seededSnap.exists()) {
-              await set(seededRef, true)
-              for (const post of initialPosts) {
-                await push(postsRef, {
-                  title: post.title,
-                  body: post.body,
-                  forum: post.forum,
-                  author: post.author,
-                  createdAt: post.createdAt,
-                  upvotes: post.upvotes,
-                  comments: post.comments,
-                })
-              }
-            }
-          } catch (e) {
-            console.warn('[Sicack] Could not seed DB (check rules):', e.message)
-          }
           setPosts([])
         } else {
           let list = Object.entries(data).map(([id, post]) => ({ id, ...post }))
-          if (forumName) {
+          if (communityName) {
             list = list.filter(
-              (p) => p.forum?.toLowerCase() === forumName.toLowerCase()
+              (p) => p.community?.toLowerCase() === communityName.toLowerCase()
+                || p.forum?.toLowerCase() === communityName.toLowerCase()
             )
           }
           list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
           setPosts(list)
         }
-
         setStatus('live')
         setError(null)
       },
@@ -66,18 +39,16 @@ export function usePosts(forumName = null) {
     )
 
     return () => unsubscribe()
-  }, [forumName])
+  }, [communityName])
 
   const createPost = async (newPost) => {
-    const postsRef = ref(database, 'posts')
-    await push(postsRef, {
+    await push(ref(database, 'posts'), {
       title: newPost.title,
-      body: newPost.body,
-      forum: newPost.forum,
+      body: newPost.body || '',
+      community: newPost.community || newPost.forum,
       author: newPost.author,
-      createdAt: newPost.createdAt,
-      upvotes: newPost.upvotes ?? 1,
-      comments: newPost.comments ?? 0,
+      authorId: newPost.authorId || null,
+      createdAt: newPost.createdAt || Date.now(),
     })
   }
 

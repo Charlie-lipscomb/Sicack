@@ -6,7 +6,7 @@ import {
   updateProfile,
   signOut,
 } from 'firebase/auth'
-import { ref, set } from 'firebase/database'
+import { ref, set, get } from 'firebase/database'
 import { auth, database } from '../firebase'
 
 const AuthContext = createContext(null)
@@ -32,18 +32,34 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signup = async (email, password, username) => {
+    const cleanName = username.trim()
+    const nameKey = cleanName.toLowerCase()
+
+    const nameSnap = await get(ref(database, `usernames/${nameKey}`))
+    if (nameSnap.exists()) {
+      throw new Error('That display name is already taken')
+    }
+
     const cred = await createUserWithEmailAndPassword(auth, email, password)
-    await updateProfile(cred.user, { displayName: username })
-    // Save profile in Realtime DB
-    await set(ref(database, `users/${cred.user.uid}`), {
-      username,
-      email,
+    await updateProfile(cred.user, { displayName: cleanName })
+
+    const profile = {
+      username: cleanName,
+      email: email.trim().toLowerCase(),
       createdAt: Date.now(),
-    })
+    }
+
+    await set(ref(database, `users/${cred.user.uid}`), profile)
+    await set(ref(database, `usernames/${nameKey}`), cred.user.uid)
+    await set(
+      ref(database, `emails/${email.trim().toLowerCase().replace(/\./g, ',')}`),
+      cred.user.uid
+    )
+
     setUser({
       uid: cred.user.uid,
       email: cred.user.email,
-      username,
+      username: cleanName,
     })
     return cred.user
   }

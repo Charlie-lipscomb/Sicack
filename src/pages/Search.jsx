@@ -17,7 +17,7 @@ export default function Search() {
       (p) =>
         p.title?.toLowerCase().includes(lower) ||
         (p.body && p.body.toLowerCase().includes(lower)) ||
-        p.forum?.toLowerCase().includes(lower) ||
+        (p.community || p.forum || '').toLowerCase().includes(lower) ||
         p.author?.toLowerCase().includes(lower)
     )
   }, [posts, query])

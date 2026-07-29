@@ -1,15 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { forums } from '../data/mockData'
+import { useCommunities } from '../hooks/useCommunities'
 
-export default function CreatePost({ onPostCreated, defaultForum = '' }) {
+export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
   const { user } = useAuth()
+  const { communities } = useCommunities()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
-  const [forum, setForum] = useState(defaultForum || forums[0].name)
+  const [community, setCommunity] = useState(defaultCommunity)
   const [submitting, setSubmitting] = useState(false)
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (defaultCommunity) setCommunity(defaultCommunity)
+    else if (communities.length && !community) setCommunity(communities[0].name)
+  }, [defaultCommunity, communities])
 
   if (!user) {
     return (
@@ -23,17 +29,16 @@ export default function CreatePost({ onPostCreated, defaultForum = '' }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!title.trim()) return
+    if (!title.trim() || !community) return
     setSubmitting(true)
     try {
       await onPostCreated({
         title: title.trim(),
         body: body.trim(),
-        forum: forum.toLowerCase(),
+        community: community.toLowerCase(),
         author: user.username,
+        authorId: user.uid,
         createdAt: Date.now(),
-        upvotes: 1,
-        comments: 0,
       })
       setTitle('')
       setBody('')
@@ -62,11 +67,17 @@ export default function CreatePost({ onPostCreated, defaultForum = '' }) {
       </div>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="forum">Community</label>
-          <select id="forum" value={forum} onChange={(e) => setForum(e.target.value)}>
-            {forums.map((f) => (
-              <option key={f.id} value={f.name}>
-                {f.name}
+          <label htmlFor="community">Community</label>
+          <select
+            id="community"
+            value={community}
+            onChange={(e) => setCommunity(e.target.value)}
+            required
+          >
+            {communities.length === 0 && <option value="">No communities yet</option>}
+            {communities.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
               </option>
             ))}
           </select>
@@ -94,7 +105,7 @@ export default function CreatePost({ onPostCreated, defaultForum = '' }) {
             rows={4}
           />
         </div>
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
+        <button type="submit" className="btn btn-primary" disabled={submitting || !community}>
           {submitting ? 'Publishing…' : 'Publish'}
         </button>
       </form>
