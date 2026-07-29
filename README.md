@@ -1,54 +1,14 @@
 # Sicack
 
-Reddit-like app (React + Vite + Firebase Realtime Database).
+Reddit-like social app powered by **Firebase Realtime Database**.
 
-**Repo:** https://github.com/Charlie-lipscomb/Sicack  
-**Pages:** https://charlie-lipscomb.github.io/Sicack/
+**Live site:** https://charlie-lipscomb.github.io/Sicack/
 
----
+## Firebase setup (required for the live backend)
 
-## Why the page looked empty
-
-`index.html` only has an empty `<div id="root">`. React fills it **after** JavaScript loads.
-
-- Opening the file on disk (`file://…`) → **will not work**
-- Opening the raw GitHub file → **will not work**
-- GitHub Pages with source = “branch / root” → serves this HTML but **not** Vite’s JS → blank
-- Correct local run: **`npm run dev`**
-- Correct Pages: source = **GitHub Actions** + successful deploy
-
----
-
-## Run locally (do this)
-
-```bash
-git clone https://github.com/Charlie-lipscomb/Sicack.git
-cd Sicack
-git pull origin main
-npm install
-npm run dev
-```
-
-Open **http://localhost:5173** (or whatever URL Vite prints).
-
-You should see the orange header, posts, and forums. The “Loading app…” box disappears once React starts.
-
----
-
-## GitHub Pages
-
-1. Repo → **Settings** → **Pages**
-2. **Source** = **GitHub Actions** (not “Deploy from a branch”)
-3. **Actions** tab → wait for “Deploy to GitHub Pages” to be green
-4. Open https://charlie-lipscomb.github.io/Sicack/
-
-Routing uses hash URLs (`/#/`, `/#/login`, `/#/r/technology`) so Pages works without special redirects.
-
----
-
-## Firebase rules
-
-Realtime Database → Rules (dev):
+1. Open [Firebase Console](https://console.firebase.google.com/) → project **sicack-c8858**
+2. **Build → Realtime Database** → create the database if it does not exist (pick a region, start in **test mode**)
+3. Open the **Rules** tab and publish:
 
 ```json
 {
@@ -59,4 +19,27 @@ Realtime Database → Rules (dev):
 }
 ```
 
-If Firebase fails, the app still shows local mock posts.
+4. Reload the live site. You should see a green banner: **● Live — Firebase Realtime Database**
+
+If you see a red **Offline** banner, the rules are still blocking access — fix step 3.
+
+> Test-mode rules are fine for a demo. Lock them down before a real production app.
+
+## How data works
+
+| Action | Backend |
+|--------|---------|
+| Load home / forum / search | `onValue` listener on `/posts` |
+| Create post (when logged in) | `push` to `/posts` |
+| First empty DB | Seeds sample posts once (`/meta/seeded`) |
+
+Everyone on the live site shares the same posts in real time.
+
+## Local development
+
+```bash
+npm install
+npm run dev
+```
+
+Uses the same Firebase project — not separate localhost-only data.
