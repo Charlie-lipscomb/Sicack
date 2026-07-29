@@ -1,11 +1,25 @@
 # Sicack
 
-A Reddit-like social media app with forums, post search, sign-in, and Firebase Realtime Database.
+Reddit-like app (React + Vite + Firebase Realtime Database).
 
 **Repo:** https://github.com/Charlie-lipscomb/Sicack  
-**Live (GitHub Pages):** https://charlie-lipscomb.github.io/Sicack/
+**Pages:** https://charlie-lipscomb.github.io/Sicack/
 
-## Run locally (this is the reliable way to test)
+---
+
+## Why the page looked empty
+
+`index.html` only has an empty `<div id="root">`. React fills it **after** JavaScript loads.
+
+- Opening the file on disk (`file://…`) → **will not work**
+- Opening the raw GitHub file → **will not work**
+- GitHub Pages with source = “branch / root” → serves this HTML but **not** Vite’s JS → blank
+- Correct local run: **`npm run dev`**
+- Correct Pages: source = **GitHub Actions** + successful deploy
+
+---
+
+## Run locally (do this)
 
 ```bash
 git clone https://github.com/Charlie-lipscomb/Sicack.git
@@ -15,16 +29,26 @@ npm install
 npm run dev
 ```
 
-Then open the URL Vite prints — usually **http://localhost:5173**
+Open **http://localhost:5173** (or whatever URL Vite prints).
 
-You should see a header, search bar, post feed, and sidebar. If the page is still blank:
+You should see the orange header, posts, and forums. The “Loading app…” box disappears once React starts.
 
-1. Open browser DevTools (F12) → **Console**
-2. Copy any red error messages and share them
+---
 
-## Firebase rules (required for cloud posts)
+## GitHub Pages
 
-Firebase Console → Realtime Database → Rules:
+1. Repo → **Settings** → **Pages**
+2. **Source** = **GitHub Actions** (not “Deploy from a branch”)
+3. **Actions** tab → wait for “Deploy to GitHub Pages” to be green
+4. Open https://charlie-lipscomb.github.io/Sicack/
+
+Routing uses hash URLs (`/#/`, `/#/login`, `/#/r/technology`) so Pages works without special redirects.
+
+---
+
+## Firebase rules
+
+Realtime Database → Rules (dev):
 
 ```json
 {
@@ -35,17 +59,4 @@ Firebase Console → Realtime Database → Rules:
 }
 ```
 
-If rules block access, the app falls back to local mock data automatically.
-
-## GitHub Pages setup
-
-1. Repo → **Settings** → **Pages**
-2. Under **Source**, choose **GitHub Actions**
-3. After a push to `main`, wait for the deploy workflow to finish (Actions tab)
-
-## Features
-
-- Home feed + forums (r/technology, r/funny, etc.)
-- Search posts
-- Log in and create posts
-- Firebase Realtime Database (with local fallback)
+If Firebase fails, the app still shows local mock posts.
