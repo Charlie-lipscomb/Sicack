@@ -11,7 +11,7 @@ export default function Header() {
   const handleSearch = (e) => {
     e.preventDefault()
     if (query.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query.trim())}`)
+      navigate(`/search?q=${encodeURIComponent(query.trim())}&tab=posts`)
       setQuery('')
     }
   }
@@ -30,7 +30,7 @@ export default function Header() {
           <input
             type="search"
             className="search-input"
-            placeholder="Search posts…"
+            placeholder="Search posts, people, messages…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
