@@ -65,9 +65,9 @@ export default function Login() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card animate-in">
+      <div className="auth-card">
         <div className="auth-brand">
-          <span className="auth-logo">◆</span>
+          <span className="auth-logo">S</span>
           <h1>Sicack</h1>
           <p>Communities that move with you</p>
         </div>
@@ -131,7 +131,7 @@ export default function Login() {
             />
           </div>
 
-          {error && <div className="auth-error animate-in">{error}</div>}
+          {error && <div className="auth-error">{error}</div>}
 
           <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
             {busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}
