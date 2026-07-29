@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// production build (npm run build / GitHub Actions) → /Sicack/
+// local dev (npm run dev) → /
 export default defineConfig({
   plugins: [react()],
-  // Subpath for GitHub Pages project site
-  base: process.env.GITHUB_ACTIONS ? '/Sicack/' : '/',
+  base: process.env.NODE_ENV === 'production' ? '/Sicack/' : '/',
 })
