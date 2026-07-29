@@ -11,43 +11,35 @@ export default function Home() {
     try {
       await createPost(newPost)
     } catch (err) {
-      alert('Could not save post. Check Firebase rules.\n\n' + err.message)
+      alert('Could not save post.\n\n' + err.message)
     }
   }
 
   return (
     <div className="content-layout">
       <div className="feed">
-        <div className="page-hero animate-in">
-          <h1>Discover</h1>
-          <p>Fresh conversations across every community</p>
-        </div>
+        <header className="page-hero">
+          <span className="eyebrow">Live feed</span>
+          <h1>Home</h1>
+        </header>
         <ConnectionStatus status={status} error={error} />
         <CreatePost onPostCreated={handlePostCreated} />
         <div className="post-list">
           {status === 'connecting' ? (
-            <div className="empty-state animate-in">Connecting to the network…</div>
+            <div className="empty-state">Connecting…</div>
           ) : posts.length === 0 ? (
-            <div className="empty-state animate-in">
+            <div className="empty-state">
               {status === 'error'
-                ? 'Could not reach Firebase. Check your database rules.'
-                : 'No posts yet — be the first to publish.'}
+                ? 'Could not reach the database.'
+                : 'No posts yet. Start a conversation.'}
             </div>
           ) : (
-            posts.map((post, i) => (
-              <PostCard key={post.id} post={post} style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }} />
-            ))
+            posts.map((post) => <PostCard key={post.id} post={post} />)
           )}
         </div>
       </div>
       <aside className="sidebar">
         <ForumList />
-        <div className="sidebar-card animate-in" style={{ animationDelay: '100ms' }}>
-          <h3>About Sicack</h3>
-          <p className="sidebar-text">
-            A live social space powered by Firebase. Posts sync instantly for everyone on the site.
-          </p>
-        </div>
       </aside>
     </div>
   )

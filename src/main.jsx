@@ -5,12 +5,11 @@ import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
-import './search.css'
 
 const rootEl = document.getElementById('root')
 
 if (!rootEl) {
-  document.body.innerHTML = '<p style="padding:40px;font-family:sans-serif">Missing #root element.</p>'
+  document.body.innerHTML = '<p style="padding:40px;font-family:sans-serif">Missing #root</p>'
 } else {
   ReactDOM.createRoot(rootEl).render(
     <React.StrictMode>

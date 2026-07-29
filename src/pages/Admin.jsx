@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ref, onValue, remove, update, set } from 'firebase/database'
 import { database } from '../firebase'
@@ -20,12 +20,11 @@ export default function Admin() {
   const [users, setUsers] = useState([])
   const [communities, setCommunities] = useState([])
   const [busyId, setBusyId] = useState(null)
+  const [q, setQ] = useState('')
 
   useEffect(() => {
     if (loading) return
-    if (!user || !isAdminUser(user)) {
-      navigate('/')
-    }
+    if (!user || !isAdminUser(user)) navigate('/')
   }, [user, loading, navigate])
 
   useEffect(() => {
@@ -33,10 +32,7 @@ export default function Admin() {
 
     const unsubPosts = onValue(ref(database, 'posts'), (snap) => {
       const data = snap.val()
-      if (!data) {
-        setPosts([])
-        return
-      }
+      if (!data) return setPosts([])
       const list = Object.entries(data).map(([id, p]) => ({ id, ...p }))
       list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
       setPosts(list)
@@ -44,10 +40,7 @@ export default function Admin() {
 
     const unsubUsers = onValue(ref(database, 'users'), (snap) => {
       const data = snap.val()
-      if (!data) {
-        setUsers([])
-        return
-      }
+      if (!data) return setUsers([])
       const list = Object.entries(data).map(([uid, u]) => ({ uid, ...u }))
       list.sort((a, b) => (a.username || '').localeCompare(b.username || ''))
       setUsers(list)
@@ -55,10 +48,7 @@ export default function Admin() {
 
     const unsubCommunities = onValue(ref(database, 'communities'), (snap) => {
       const data = snap.val()
-      if (!data) {
-        setCommunities([])
-        return
-      }
+      if (!data) return setCommunities([])
       const list = Object.entries(data).map(([id, c]) => ({ id, ...c }))
       list.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
       setCommunities(list)
@@ -71,8 +61,44 @@ export default function Admin() {
     }
   }, [user])
 
+  const lower = q.trim().toLowerCase()
+
+  const filteredPosts = useMemo(() => {
+    if (!lower) return posts
+    return posts.filter(
+      (p) =>
+        p.title?.toLowerCase().includes(lower) ||
+        p.body?.toLowerCase().includes(lower) ||
+        p.author?.toLowerCase().includes(lower) ||
+        (p.community || p.forum || '').toLowerCase().includes(lower)
+    )
+  }, [posts, lower])
+
+  const filteredUsers = useMemo(() => {
+    if (!lower) return users
+    return users.filter((u) => {
+      if (isAdminUsername(u.username)) {
+        return 'sicack support'.includes(lower) || 'sicack'.includes(lower) || lower.includes('sicack')
+      }
+      return (
+        u.username?.toLowerCase().includes(lower) ||
+        u.email?.toLowerCase().includes(lower)
+      )
+    })
+  }, [users, lower])
+
+  const filteredCommunities = useMemo(() => {
+    if (!lower) return communities
+    return communities.filter(
+      (c) =>
+        c.name?.toLowerCase().includes(lower) ||
+        c.description?.toLowerCase().includes(lower) ||
+        c.createdBy?.toLowerCase().includes(lower)
+    )
+  }, [communities, lower])
+
   if (loading || !user || !isAdminUser(user)) {
-    return <div className="empty-state animate-in">Checking access…</div>
+    return <div className="empty-state">Checking access…</div>
   }
 
   const deletePost = async (id) => {
@@ -80,6 +106,7 @@ export default function Admin() {
     setBusyId(id)
     try {
       await remove(ref(database, `posts/${id}`))
+      await remove(ref(database, `comments/${id}`))
     } catch (e) {
       alert('Failed: ' + e.message)
     } finally {
@@ -88,7 +115,7 @@ export default function Admin() {
   }
 
   const deleteCommunity = async (id, name) => {
-    if (!confirm(`Delete community “${name}” permanently?`)) return
+    if (!confirm(`Delete community “${name}”?`)) return
     setBusyId(id)
     try {
       await remove(ref(database, `communities/${id}`))
@@ -101,16 +128,10 @@ export default function Admin() {
 
   const banUser = async (uid, username, email) => {
     if (isAdminUsername(username)) {
-      alert('Cannot ban the Sicack support account')
+      alert('Cannot ban Sicack Support')
       return
     }
-    if (
-      !confirm(
-        `Ban ${username}? They will be signed out and cannot log in or create a new account with the same email.`
-      )
-    ) {
-      return
-    }
+    if (!confirm(`Ban ${username}? They cannot sign in with this email.`)) return
     setBusyId(uid)
     try {
       await update(ref(database, `users/${uid}`), {
@@ -118,10 +139,7 @@ export default function Admin() {
         bannedAt: Date.now(),
         bannedBy: 'Sicack Support',
       })
-      // Email ban list — blocks login even if they clear cookies
-      if (email) {
-        await set(ref(database, `bannedEmails/${emailKey(email)}`), true)
-      }
+      if (email) await set(ref(database, `bannedEmails/${emailKey(email)}`), true)
     } catch (e) {
       alert('Failed: ' + e.message)
     } finally {
@@ -137,9 +155,7 @@ export default function Admin() {
         bannedAt: null,
         bannedBy: null,
       })
-      if (email) {
-        await remove(ref(database, `bannedEmails/${emailKey(email)}`))
-      }
+      if (email) await remove(ref(database, `bannedEmails/${emailKey(email)}`))
     } catch (e) {
       alert('Failed: ' + e.message)
     } finally {
@@ -148,13 +164,18 @@ export default function Admin() {
   }
 
   const deleteUserPosts = async (username) => {
-    if (!confirm(`Delete ALL posts by ${username}?`)) return
+    if (!confirm(`Delete all posts by ${username}?`)) return
     setBusyId('bulk-' + username)
     try {
       const targets = posts.filter(
         (p) => (p.author || '').toLowerCase() === username.toLowerCase()
       )
-      await Promise.all(targets.map((p) => remove(ref(database, `posts/${p.id}`))))
+      await Promise.all(
+        targets.map(async (p) => {
+          await remove(ref(database, `posts/${p.id}`))
+          await remove(ref(database, `comments/${p.id}`))
+        })
+      )
     } catch (e) {
       alert('Failed: ' + e.message)
     } finally {
@@ -163,38 +184,52 @@ export default function Admin() {
   }
 
   return (
-    <div className="admin-page animate-in">
+    <div className="admin-page">
       <div className="admin-hero">
         <div>
-          <span className="forum-badge">Moderation</span>
-          <h1>Admin panel</h1>
-          <p>Signed in as Sicack Support · manage users, posts, and communities</p>
+          <span className="eyebrow">Moderation</span>
+          <h1>Admin</h1>
+          <p>Search members and content, ban accounts, remove posts</p>
         </div>
-        <Link to="/" className="btn btn-ghost">
+        <Link to="/" className="btn btn-ghost btn-sm">
           ← Feed
         </Link>
       </div>
 
-      <div className="admin-tabs">
+      <div className="admin-search">
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Filter users, posts, communities…"
+        />
+        {q && (
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setQ('')}>
+            Clear
+          </button>
+        )}
+      </div>
+
+      <div className="segmented">
         <button type="button" className={tab === 'posts' ? 'active' : ''} onClick={() => setTab('posts')}>
-          Posts ({posts.length})
+          Posts ({filteredPosts.length})
         </button>
         <button type="button" className={tab === 'users' ? 'active' : ''} onClick={() => setTab('users')}>
-          Users ({users.length})
+          Users ({filteredUsers.length})
         </button>
         <button
           type="button"
           className={tab === 'communities' ? 'active' : ''}
           onClick={() => setTab('communities')}
         >
-          Communities ({communities.length})
+          Communities ({filteredCommunities.length})
         </button>
       </div>
 
       {tab === 'posts' && (
         <div className="admin-table-wrap">
-          {posts.length === 0 ? (
-            <div className="empty-state">No posts</div>
+          {filteredPosts.length === 0 ? (
+            <div className="empty-state">No posts match</div>
           ) : (
             <table className="admin-table">
               <thead>
@@ -202,20 +237,18 @@ export default function Admin() {
                   <th>Title</th>
                   <th>Author</th>
                   <th>Community</th>
-                  <th>When</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {posts.map((p) => (
+                {filteredPosts.map((p) => (
                   <tr key={p.id}>
                     <td>
-                      <strong>{p.title}</strong>
+                      <Link to={`/post/${p.id}`}><strong>{p.title}</strong></Link>
                       {p.body ? <span className="admin-sub">{p.body.slice(0, 80)}</span> : null}
                     </td>
                     <td>{publicDisplayName(p.author)}</td>
                     <td>{p.community || p.forum || '—'}</td>
-                    <td>{p.createdAt ? new Date(p.createdAt).toLocaleString() : '—'}</td>
                     <td>
                       <button
                         type="button"
@@ -236,25 +269,21 @@ export default function Admin() {
 
       {tab === 'users' && (
         <div className="admin-table-wrap">
-          {users.length === 0 ? (
-            <div className="empty-state">No users</div>
+          {filteredUsers.length === 0 ? (
+            <div className="empty-state">No users match</div>
           ) : (
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Username</th>
+                  <th>User</th>
                   <th>Email</th>
                   <th>Status</th>
-                  <th>Posts</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => {
+                {filteredUsers.map((u) => {
                   const admin = isAdminUsername(u.username)
-                  const postCount = posts.filter(
-                    (p) => (p.author || '').toLowerCase() === (u.username || '').toLowerCase()
-                  ).length
                   return (
                     <tr key={u.uid}>
                       <td>
@@ -269,7 +298,6 @@ export default function Admin() {
                           <span className="status-ok">Active</span>
                         )}
                       </td>
-                      <td>{postCount}</td>
                       <td className="admin-actions">
                         {!admin && (
                           <>
@@ -314,8 +342,8 @@ export default function Admin() {
 
       {tab === 'communities' && (
         <div className="admin-table-wrap">
-          {communities.length === 0 ? (
-            <div className="empty-state">No communities</div>
+          {filteredCommunities.length === 0 ? (
+            <div className="empty-state">No communities match</div>
           ) : (
             <table className="admin-table">
               <thead>
@@ -327,11 +355,9 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {communities.map((c) => (
+                {filteredCommunities.map((c) => (
                   <tr key={c.id}>
-                    <td>
-                      <Link to={`/c/${c.name}`}>{c.name}</Link>
-                    </td>
+                    <td><Link to={`/c/${c.name}`}>{c.name}</Link></td>
                     <td>{c.description || '—'}</td>
                     <td>{publicDisplayName(c.createdBy)}</td>
                     <td>

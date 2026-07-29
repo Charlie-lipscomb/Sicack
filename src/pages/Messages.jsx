@@ -9,6 +9,7 @@ import {
   sendMessage,
 } from '../hooks/useMessages'
 import { publicDisplayName, publicEmail, isAdminUsername } from '../utils/admin'
+import { markChatRead } from '../hooks/useUnread'
 
 export default function Messages() {
   const { user } = useAuth()
@@ -42,13 +43,17 @@ export default function Messages() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, activeChat])
 
+  useEffect(() => {
+    if (user?.uid && activeChat) {
+      markChatRead(user.uid, activeChat).catch(() => {})
+    }
+  }, [user?.uid, activeChat, messages.length])
+
   if (!user) {
     return (
-      <div className="empty-state animate-in">
+      <div className="empty-state">
         <h2>Messages</h2>
-        <p>
-          <Link to="/login">Sign in</Link> to message other members.
-        </p>
+        <p><Link to="/login">Sign in</Link> to message members.</p>
       </div>
     )
   }
@@ -62,6 +67,7 @@ export default function Messages() {
       email: publicEmail(person.username, person.email),
     })
     setLookupError('')
+    markChatRead(user.uid, id).catch(() => {})
   }
 
   const handleFind = async (e) => {
@@ -71,7 +77,7 @@ export default function Messages() {
     try {
       const found = await findUser(lookup)
       if (!found) {
-        setLookupError('No member found with that username or email')
+        setLookupError('No member found')
         return
       }
       if (found.uid === user.uid) {
@@ -102,6 +108,7 @@ export default function Messages() {
         text: draft,
       })
       setDraft('')
+      await markChatRead(user.uid, activeChat)
     } catch (err) {
       alert('Could not send: ' + err.message)
     } finally {
@@ -116,12 +123,13 @@ export default function Messages() {
       username: publicDisplayName(c.otherName),
       email: publicEmail(c.otherName, c.otherEmail),
     })
+    markChatRead(user.uid, c.id).catch(() => {})
   }
 
   const peerLabel = peer ? publicDisplayName(peer.username) : ''
 
   return (
-    <div className="messages-layout animate-in">
+    <div className="messages-layout">
       <aside className="messages-sidebar">
         <h1 className="messages-title">Messages</h1>
 
@@ -130,35 +138,41 @@ export default function Messages() {
             type="text"
             value={lookup}
             onChange={(e) => setLookup(e.target.value)}
-            placeholder="Username or email…"
+            placeholder="Username or email"
           />
           <button type="submit" className="btn btn-primary btn-sm" disabled={lookupBusy}>
-            {lookupBusy ? '…' : 'Find'}
+            Find
           </button>
         </form>
         {lookupError && <p className="lookup-error">{lookupError}</p>}
 
         <ul className="convo-list">
           {conversations.length === 0 ? (
-            <li className="convo-empty">No conversations yet. Find someone above.</li>
+            <li className="convo-empty">No conversations yet</li>
           ) : (
-            conversations.map((c) => (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  className={`convo-item ${activeChat === c.id ? 'active' : ''}`}
-                  onClick={() => openFromList(c)}
-                >
-                  <span className="convo-avatar">
-                    {(c.otherName || '?').charAt(0).toUpperCase()}
-                  </span>
-                  <span className="convo-meta">
-                    <span className="convo-name">{c.otherName}</span>
-                    <span className="convo-preview">{c.lastMessage}</span>
-                  </span>
-                </button>
-              </li>
-            ))
+            conversations.map((c) => {
+              const unread = (c.updatedAt || 0) > (c.lastReadAt || 0)
+              return (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    className={`convo-item ${activeChat === c.id ? 'active' : ''} ${unread ? 'unread' : ''}`}
+                    onClick={() => openFromList(c)}
+                  >
+                    <span className="convo-avatar">
+                      {(c.otherName || '?').charAt(0).toUpperCase()}
+                    </span>
+                    <span className="convo-meta">
+                      <span className="convo-name">
+                        {c.otherName}
+                        {unread && <span className="unread-dot" />}
+                      </span>
+                      <span className="convo-preview">{c.lastMessage}</span>
+                    </span>
+                  </button>
+                </li>
+              )
+            })
           )}
         </ul>
       </aside>
@@ -166,7 +180,7 @@ export default function Messages() {
       <section className="messages-thread">
         {!activeChat || !peer ? (
           <div className="thread-empty">
-            <p>Select a conversation or find a member by username or email.</p>
+            <p>Select a conversation or find someone by username.</p>
           </div>
         ) : (
           <>
@@ -176,7 +190,7 @@ export default function Messages() {
                 <strong>{peerLabel}</strong>
                 {peer.email ? (
                   <span className="thread-email">{peer.email}</span>
-                ) : isAdminUsername(peer.username) || peerLabel === 'Sicack Support' ? (
+                ) : peerLabel === 'Sicack Support' ? (
                   <span className="thread-email">Official support</span>
                 ) : null}
               </div>
@@ -203,7 +217,7 @@ export default function Messages() {
                 type="text"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder={`Message ${peerLabel}…`}
+                placeholder={`Message ${peerLabel}`}
                 maxLength={2000}
               />
               <button type="submit" className="btn btn-primary" disabled={sending || !draft.trim()}>
