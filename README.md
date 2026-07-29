@@ -1,33 +1,30 @@
 # Sicack
 
-A Reddit-like social media app with forums, post search, authentication, and Firebase Realtime Database.
+A Reddit-like social media app with forums, post search, sign-in, and Firebase Realtime Database.
 
-**Live site:** https://charlie-lipscomb.github.io/Sicack/
+**Repo:** https://github.com/Charlie-lipscomb/Sicack  
+**Live (GitHub Pages):** https://charlie-lipscomb.github.io/Sicack/
 
-## Features
-
-- Home feed with real-time posts from Firebase
-- Forums (r/technology, r/funny, r/AskReddit, etc.)
-- Search posts by title, body, forum, or author
-- Sign in and create posts
-- Firebase Realtime Database sync
-
-## Local development
+## Run locally (this is the reliable way to test)
 
 ```bash
 git clone https://github.com/Charlie-lipscomb/Sicack.git
 cd Sicack
+git pull origin main
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173/Sicack/ (or the URL Vite prints).
+Then open the URL Vite prints — usually **http://localhost:5173**
 
-> **Note:** Because this is set up for GitHub Pages, the Vite base path is `/Sicack/`. Locally you may need to open that path, or temporarily set `base: '/'` in `vite.config.js` for local-only work.
+You should see a header, search bar, post feed, and sidebar. If the page is still blank:
 
-## Firebase Realtime Database rules
+1. Open browser DevTools (F12) → **Console**
+2. Copy any red error messages and share them
 
-In the [Firebase Console](https://console.firebase.google.com) → Realtime Database → Rules, use something like this for development:
+## Firebase rules (required for cloud posts)
+
+Firebase Console → Realtime Database → Rules:
 
 ```json
 {
@@ -38,10 +35,17 @@ In the [Firebase Console](https://console.firebase.google.com) → Realtime Data
 }
 ```
 
-**Important:** Restrict these rules before going to production.
+If rules block access, the app falls back to local mock data automatically.
 
-## Tech stack
+## GitHub Pages setup
 
-- React 18 + Vite
-- React Router
-- Firebase Realtime Database
+1. Repo → **Settings** → **Pages**
+2. Under **Source**, choose **GitHub Actions**
+3. After a push to `main`, wait for the deploy workflow to finish (Actions tab)
+
+## Features
+
+- Home feed + forums (r/technology, r/funny, etc.)
+- Search posts
+- Log in and create posts
+- Firebase Realtime Database (with local fallback)
