@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { isAdminUser, publicDisplayName } from '../utils/admin'
 
 export default function Header() {
   const { user, logout, loading } = useAuth()
@@ -14,6 +15,8 @@ export default function Header() {
       setQuery('')
     }
   }
+
+  const displayName = user ? publicDisplayName(user.username) : ''
 
   return (
     <header className="header">
@@ -38,12 +41,17 @@ export default function Header() {
             <span className="user-info">…</span>
           ) : user ? (
             <>
+              {isAdminUser(user) && (
+                <Link to="/admin" className="btn btn-primary">
+                  Admin
+                </Link>
+              )}
               <Link to="/messages" className="btn btn-ghost">
                 Messages
               </Link>
               <span className="user-chip">
-                <span className="user-avatar">{user.username.charAt(0).toUpperCase()}</span>
-                {user.username}
+                <span className="user-avatar">{displayName.charAt(0).toUpperCase()}</span>
+                {displayName}
               </span>
               <button type="button" className="btn btn-ghost" onClick={() => logout()}>
                 Sign out

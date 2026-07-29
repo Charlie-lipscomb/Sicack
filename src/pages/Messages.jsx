@@ -8,6 +8,7 @@ import {
   chatIdFor,
   sendMessage,
 } from '../hooks/useMessages'
+import { publicDisplayName, publicEmail, isAdminUsername } from '../utils/admin'
 
 export default function Messages() {
   const { user } = useAuth()
@@ -25,7 +26,6 @@ export default function Messages() {
 
   const messages = useChatMessages(activeChat)
 
-  // Deep link ?to=username
   useEffect(() => {
     const to = searchParams.get('to')
     if (!to || !user) return
@@ -56,7 +56,11 @@ export default function Messages() {
   const openChat = (person) => {
     const id = chatIdFor(user.uid, person.uid)
     setActiveChat(id)
-    setPeer(person)
+    setPeer({
+      uid: person.uid,
+      username: publicDisplayName(person.username),
+      email: publicEmail(person.username, person.email),
+    })
     setLookupError('')
   }
 
@@ -93,8 +97,8 @@ export default function Messages() {
         fromUid: user.uid,
         fromName: user.username,
         toUid: peer.uid,
-        toName: peer.username,
-        toEmail: peer.email,
+        toName: isAdminUsername(peer.username) ? 'Sicack' : peer.username,
+        toEmail: peer.email || '',
         text: draft,
       })
       setDraft('')
@@ -109,10 +113,12 @@ export default function Messages() {
     setActiveChat(c.id)
     setPeer({
       uid: c.otherUid,
-      username: c.otherName,
-      email: c.otherEmail || '',
+      username: publicDisplayName(c.otherName),
+      email: publicEmail(c.otherName, c.otherEmail),
     })
   }
+
+  const peerLabel = peer ? publicDisplayName(peer.username) : ''
 
   return (
     <div className="messages-layout animate-in">
@@ -143,7 +149,9 @@ export default function Messages() {
                   className={`convo-item ${activeChat === c.id ? 'active' : ''}`}
                   onClick={() => openFromList(c)}
                 >
-                  <span className="convo-avatar">{(c.otherName || '?').charAt(0).toUpperCase()}</span>
+                  <span className="convo-avatar">
+                    {(c.otherName || '?').charAt(0).toUpperCase()}
+                  </span>
                   <span className="convo-meta">
                     <span className="convo-name">{c.otherName}</span>
                     <span className="convo-preview">{c.lastMessage}</span>
@@ -163,10 +171,14 @@ export default function Messages() {
         ) : (
           <>
             <div className="thread-header">
-              <span className="convo-avatar">{peer.username.charAt(0).toUpperCase()}</span>
+              <span className="convo-avatar">{peerLabel.charAt(0).toUpperCase()}</span>
               <div>
-                <strong>{peer.username}</strong>
-                {peer.email && <span className="thread-email">{peer.email}</span>}
+                <strong>{peerLabel}</strong>
+                {peer.email ? (
+                  <span className="thread-email">{peer.email}</span>
+                ) : isAdminUsername(peer.username) || peerLabel === 'Sicack Support' ? (
+                  <span className="thread-email">Official support</span>
+                ) : null}
               </div>
             </div>
             <div className="thread-messages">
@@ -191,7 +203,7 @@ export default function Messages() {
                 type="text"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder={`Message ${peer.username}…`}
+                placeholder={`Message ${peerLabel}…`}
                 maxLength={2000}
               />
               <button type="submit" className="btn btn-primary" disabled={sending || !draft.trim()}>

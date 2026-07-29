@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { publicDisplayName } from '../utils/admin'
 
 function timeAgo(timestamp) {
   const seconds = Math.floor((Date.now() - timestamp) / 1000)
@@ -13,6 +14,7 @@ function timeAgo(timestamp) {
 
 export default function PostCard({ post, style }) {
   const community = post.community || post.forum || 'general'
+  const author = publicDisplayName(post.author)
 
   return (
     <article className="post-card animate-in" style={style}>
@@ -22,7 +24,7 @@ export default function PostCard({ post, style }) {
             {community}
           </Link>
           <span className="dot">·</span>
-          <span>{post.author}</span>
+          <span>{author}</span>
           <span className="dot">·</span>
           <span>{timeAgo(post.createdAt)} ago</span>
         </div>

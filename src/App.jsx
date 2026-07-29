@@ -6,6 +6,7 @@ import Search from './pages/Search'
 import Login from './pages/Login'
 import CreateCommunity from './pages/CreateCommunity'
 import Messages from './pages/Messages'
+import Admin from './pages/Admin'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/r/:forumName" element={<Forum />} />
           <Route path="/communities/new" element={<CreateCommunity />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/search" element={<Search />} />
           <Route path="/login" element={<Login />} />
         </Routes>

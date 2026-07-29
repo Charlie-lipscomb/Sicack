@@ -1,36 +1,41 @@
 import { useState, useEffect } from 'react'
 import { ref, onValue, push, set, get, update, query, orderByChild, limitToLast } from 'firebase/database'
 import { database } from '../firebase'
+import { isAdminUsername, publicDisplayName, publicProfile } from '../utils/admin'
 
 export function chatIdFor(uidA, uidB) {
   return [uidA, uidB].sort().join('_')
 }
 
-/** Find a user by username or email */
+/** Find a user by username or email — Sicack account never exposes email */
 export async function findUser(queryText) {
   const q = queryText.trim().toLowerCase()
   if (!q) return null
 
-  // Username index
   const byName = await get(ref(database, `usernames/${q}`))
   if (byName.exists()) {
     const uid = byName.val()
     const profile = await get(ref(database, `users/${uid}`))
-    if (profile.exists()) return { uid, ...profile.val() }
+    if (profile.exists()) return publicProfile({ uid, ...profile.val() })
   }
 
-  // Email index (dots stored as commas)
   if (q.includes('@')) {
     const emailKey = q.replace(/\./g, ',')
     const byEmail = await get(ref(database, `emails/${emailKey}`))
     if (byEmail.exists()) {
       const uid = byEmail.val()
       const profile = await get(ref(database, `users/${uid}`))
-      if (profile.exists()) return { uid, ...profile.val() }
+      if (profile.exists()) {
+        const data = profile.val()
+        // Do not reveal Sicack via email search result details
+        if (isAdminUsername(data.username)) {
+          return publicProfile({ uid, ...data })
+        }
+        return publicProfile({ uid, ...data })
+      }
     }
   }
 
-  // Fallback: scan users (fine for small apps)
   const all = await get(ref(database, 'users'))
   if (all.exists()) {
     for (const [uid, profile] of Object.entries(all.val())) {
@@ -38,7 +43,7 @@ export async function findUser(queryText) {
         profile.username?.toLowerCase() === q ||
         profile.email?.toLowerCase() === q
       ) {
-        return { uid, ...profile }
+        return publicProfile({ uid, ...profile })
       }
     }
   }
@@ -60,7 +65,16 @@ export function useConversations(uid) {
         setConversations([])
         return
       }
-      const list = Object.entries(data).map(([id, c]) => ({ id, ...c }))
+      const list = Object.entries(data).map(([id, c]) => {
+        const name = publicDisplayName(c.otherName)
+        return {
+          id,
+          ...c,
+          otherName: name,
+          // Never surface Sicack email in the UI
+          otherEmail: isAdminUsername(c.otherName) ? '' : c.otherEmail || '',
+        }
+      })
       list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
       setConversations(list)
     })
@@ -89,7 +103,11 @@ export function useChatMessages(chatId) {
         setMessages([])
         return
       }
-      const list = Object.entries(data).map(([id, m]) => ({ id, ...m }))
+      const list = Object.entries(data).map(([id, m]) => ({
+        id,
+        ...m,
+        fromName: publicDisplayName(m.fromName),
+      }))
       list.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
       setMessages(list)
     })
@@ -104,11 +122,16 @@ export async function sendMessage({ chatId, fromUid, fromName, toUid, toName, to
   if (!body) return
 
   const now = Date.now()
+  const safeFrom = publicDisplayName(fromName)
+  const safeTo = publicDisplayName(toName)
+  const safeToEmail = isAdminUsername(toName) ? '' : toEmail || ''
+  const safeFromEmailHidden = isAdminUsername(fromName)
+
   const msgRef = push(ref(database, `chats/${chatId}/messages`))
   await set(msgRef, {
     text: body,
     fromUid,
-    fromName,
+    fromName: safeFrom,
     createdAt: now,
   })
 
@@ -116,15 +139,16 @@ export async function sendMessage({ chatId, fromUid, fromName, toUid, toName, to
 
   await update(ref(database, `userChats/${fromUid}/${chatId}`), {
     otherUid: toUid,
-    otherName: toName,
-    otherEmail: toEmail || '',
+    otherName: safeTo,
+    otherEmail: safeToEmail,
     lastMessage: preview,
     updatedAt: now,
   })
 
   await update(ref(database, `userChats/${toUid}/${chatId}`), {
     otherUid: fromUid,
-    otherName: fromName,
+    otherName: safeFrom,
+    otherEmail: safeFromEmailHidden ? '' : '',
     lastMessage: preview,
     updatedAt: now,
   })
