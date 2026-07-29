@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
-  const [mode, setMode] = useState('login') // login | signup
+  const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -41,7 +41,9 @@ export default function Login() {
                 ? 'Password must be at least 6 characters.'
                 : err.code === 'auth/invalid-email'
                   ? 'Enter a valid email address.'
-                  : err.message || 'Something went wrong.'
+                  : err.code === 'auth/operation-not-allowed'
+                    ? 'Email/password sign-in is disabled. Enable it in Firebase Console → Authentication.'
+                    : err.message || 'Something went wrong.'
       setError(msg)
     } finally {
       setBusy(false)
@@ -108,7 +110,7 @@ export default function Login() {
             <label htmlFor="password">Password</label>
             <input
               id="password"
-oi              type="password"
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={mode === 'signup' ? 'At least 6 characters' : 'Your password'}

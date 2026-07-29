@@ -3,15 +3,16 @@ import { forums } from '../data/mockData'
 
 export default function ForumList() {
   return (
-    <div className="sidebar-card">
-      <h3>Popular Forums</h3>
+    <div className="sidebar-card animate-in">
+      <h3>Communities</h3>
       <ul className="forum-list">
-        {forums.map((forum) => (
-          <li key={forum.id}>
-            <Link to={`/r/${forum.name}`}>r/{forum.name}</Link>
-            <span style={{ color: '#7c7c7c', fontSize: '0.75rem', marginLeft: 6 }}>
-              {forum.members.toLocaleString()} members
-            </span>
+        {forums.map((forum, i) => (
+          <li key={forum.id} style={{ animationDelay: `${i * 40}ms` }} className="animate-in">
+            <Link to={`/r/${forum.name}`}>
+              <span className="forum-dot" />
+              {forum.name}
+            </Link>
+            <span className="forum-members">{(forum.members / 1000).toFixed(1)}k</span>
           </li>
         ))}
       </ul>

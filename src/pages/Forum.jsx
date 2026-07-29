@@ -8,44 +8,45 @@ import { forums } from '../data/mockData'
 
 export default function Forum() {
   const { forumName } = useParams()
-  const forum = forums.find(
-    (f) => f.name.toLowerCase() === forumName?.toLowerCase()
-  )
+  const forum = forums.find((f) => f.name.toLowerCase() === forumName?.toLowerCase())
   const { posts, status, error, createPost } = usePosts(forumName)
 
   const handlePostCreated = async (newPost) => {
     try {
       await createPost(newPost)
     } catch (err) {
-      alert('Could not save post to Firebase. Check your database rules.\n\n' + err.message)
+      alert('Could not save post. Check Firebase rules.\n\n' + err.message)
     }
   }
 
   if (!forum) {
     return (
-      <div className="empty-state">
-        <h2>Forum not found</h2>
-        <p>r/{forumName} does not exist.</p>
+      <div className="empty-state animate-in">
+        <h2>Community not found</h2>
+        <p>{forumName} doesn’t exist yet.</p>
       </div>
     )
   }
 
   return (
     <div className="content-layout">
-      <div>
-        <div className="forum-header">
-          <h1>r/{forum.name}</h1>
+      <div className="feed">
+        <div className="forum-header animate-in">
+          <span className="forum-badge">{forum.name}</span>
+          <h1>{forum.name}</h1>
           <p>{forum.description}</p>
         </div>
         <ConnectionStatus status={status} error={error} />
         <CreatePost onPostCreated={handlePostCreated} defaultForum={forum.name} />
         <div className="post-list">
           {status === 'connecting' ? (
-            <div className="empty-state">Connecting to Firebase…</div>
+            <div className="empty-state animate-in">Loading…</div>
           ) : posts.length === 0 ? (
-            <div className="empty-state">No posts in this forum yet.</div>
+            <div className="empty-state animate-in">No posts here yet.</div>
           ) : (
-            posts.map((post) => <PostCard key={post.id} post={post} />)
+            posts.map((post, i) => (
+              <PostCard key={post.id} post={post} style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }} />
+            ))
           )}
         </div>
       </div>

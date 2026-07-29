@@ -1,14 +1,12 @@
 # Sicack
 
-Reddit-like social app powered by **Firebase Realtime Database**.
+Premium community feed with **Firebase Authentication** + **Realtime Database**.
 
-**Live site:** https://charlie-lipscomb.github.io/Sicack/
+**Live:** https://charlie-lipscomb.github.io/Sicack/
 
-## Firebase setup (required for the live backend)
+## Firebase setup
 
-1. Open [Firebase Console](https://console.firebase.google.com/) → project **sicack-c8858**
-2. **Build → Realtime Database** → create the database if it does not exist (pick a region, start in **test mode**)
-3. Open the **Rules** tab and publish:
+### 1. Realtime Database rules
 
 ```json
 {
@@ -19,27 +17,19 @@ Reddit-like social app powered by **Firebase Realtime Database**.
 }
 ```
 
-4. Reload the live site. You should see a green banner: **● Live — Firebase Realtime Database**
+### 2. Authentication (required for accounts)
 
-If you see a red **Offline** banner, the rules are still blocking access — fix step 3.
+1. Firebase Console → **Build → Authentication** → **Get started**
+2. **Sign-in method** → enable **Email/Password**
+3. **Settings → Authorized domains** → add:
+   - `localhost`
+   - `charlie-lipscomb.github.io`
 
-> Test-mode rules are fine for a demo. Lock them down before a real production app.
+Without step 2–3, create account / sign in will fail on the live site.
 
-## How data works
+## Features
 
-| Action | Backend |
-|--------|---------|
-| Load home / forum / search | `onValue` listener on `/posts` |
-| Create post (when logged in) | `push` to `/posts` |
-| First empty DB | Seeds sample posts once (`/meta/seeded`) |
-
-Everyone on the live site shares the same posts in real time.
-
-## Local development
-
-```bash
-npm install
-npm run dev
-```
-
-Uses the same Firebase project — not separate localhost-only data.
+- Email + password accounts (Firebase Auth)
+- Profiles stored under `/users/{uid}` in Realtime DB
+- Live posts under `/posts`
+- Dark premium UI with motion

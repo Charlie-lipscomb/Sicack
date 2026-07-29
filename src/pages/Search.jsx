@@ -24,18 +24,23 @@ export default function Search() {
 
   return (
     <div className="content-layout">
-      <div>
-        <h1 className="page-title">Search results for &quot;{query}&quot;</h1>
+      <div className="feed">
+        <div className="page-hero animate-in">
+          <h1>Search</h1>
+          <p>{query ? `Results for “${query}”` : 'Type a query in the bar above'}</p>
+        </div>
         <ConnectionStatus status={status} error={error} />
         <div className="post-list">
           {status === 'connecting' ? (
-            <div className="empty-state">Searching…</div>
+            <div className="empty-state animate-in">Searching…</div>
           ) : results.length === 0 ? (
-            <div className="empty-state">
-              {query ? 'No posts matched your search.' : 'Enter a search term above.'}
+            <div className="empty-state animate-in">
+              {query ? 'Nothing matched that search.' : 'Enter a search term above.'}
             </div>
           ) : (
-            results.map((post) => <PostCard key={post.id} post={post} />)
+            results.map((post, i) => (
+              <PostCard key={post.id} post={post} style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }} />
+            ))
           )}
         </div>
       </div>

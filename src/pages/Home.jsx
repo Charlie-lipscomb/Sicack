@@ -11,35 +11,41 @@ export default function Home() {
     try {
       await createPost(newPost)
     } catch (err) {
-      alert('Could not save post to Firebase. Check your database rules.\n\n' + err.message)
+      alert('Could not save post. Check Firebase rules.\n\n' + err.message)
     }
   }
 
   return (
     <div className="content-layout">
-      <div>
+      <div className="feed">
+        <div className="page-hero animate-in">
+          <h1>Discover</h1>
+          <p>Fresh conversations across every community</p>
+        </div>
         <ConnectionStatus status={status} error={error} />
         <CreatePost onPostCreated={handlePostCreated} />
         <div className="post-list">
           {status === 'connecting' ? (
-            <div className="empty-state">Connecting to Firebase…</div>
+            <div className="empty-state animate-in">Connecting to the network…</div>
           ) : posts.length === 0 ? (
-            <div className="empty-state">
+            <div className="empty-state animate-in">
               {status === 'error'
-                ? 'Could not load posts from Firebase. Open the sidebar tip and check your rules.'
-                : 'No posts yet. Log in and be the first to post!'}
+                ? 'Could not reach Firebase. Check your database rules.'
+                : 'No posts yet — be the first to publish.'}
             </div>
           ) : (
-            posts.map((post) => <PostCard key={post.id} post={post} />)
+            posts.map((post, i) => (
+              <PostCard key={post.id} post={post} style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }} />
+            ))
           )}
         </div>
       </div>
       <aside className="sidebar">
         <ForumList />
-        <div className="sidebar-card">
-          <h3>Backend</h3>
-          <p style={{ fontSize: '0.85rem', color: '#7c7c7c' }}>
-            All posts are stored in Firebase Realtime Database and sync live for everyone on the site.
+        <div className="sidebar-card animate-in" style={{ animationDelay: '100ms' }}>
+          <h3>About Sicack</h3>
+          <p className="sidebar-text">
+            A live social space powered by Firebase. Posts sync instantly for everyone on the site.
           </p>
         </div>
       </aside>

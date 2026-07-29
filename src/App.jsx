@@ -8,6 +8,7 @@ import Login from './pages/Login'
 function App() {
   return (
     <div className="app">
+      <div className="bg-glow" aria-hidden="true" />
       <Header />
       <main className="main-content">
         <Routes>
