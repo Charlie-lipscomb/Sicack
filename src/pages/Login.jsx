@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, BannedError } from '../context/AuthContext'
 
 export default function Login() {
   const [mode, setMode] = useState('login')
@@ -9,12 +9,19 @@ export default function Login() {
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const { login, signup, user } = useAuth()
+  const { login, signup, user, banNotice, clearBanNotice } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
     if (user) navigate('/')
   }, [user, navigate])
+
+  useEffect(() => {
+    if (banNotice) {
+      setError(banNotice)
+      clearBanNotice()
+    }
+  }, [banNotice, clearBanNotice])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -30,21 +37,25 @@ export default function Login() {
       }
       navigate('/')
     } catch (err) {
-      const msg =
-        err.code === 'auth/email-already-in-use'
-          ? 'That email is already registered. Try logging in.'
-          : err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'
-            ? 'Wrong email or password.'
-            : err.code === 'auth/user-not-found'
-              ? 'No account with that email. Create one instead.'
-              : err.code === 'auth/weak-password'
-                ? 'Password must be at least 6 characters.'
-                : err.code === 'auth/invalid-email'
-                  ? 'Enter a valid email address.'
-                  : err.code === 'auth/operation-not-allowed'
-                    ? 'Email/password sign-in is disabled. Enable it in Firebase Console → Authentication.'
-                    : err.message || 'Something went wrong.'
-      setError(msg)
+      if (err instanceof BannedError || err.code === 'sicack/banned') {
+        setError(err.message)
+      } else {
+        const msg =
+          err.code === 'auth/email-already-in-use'
+            ? 'That email is already registered. Try logging in.'
+            : err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password'
+              ? 'Wrong email or password.'
+              : err.code === 'auth/user-not-found'
+                ? 'No account with that email. Create one instead.'
+                : err.code === 'auth/weak-password'
+                  ? 'Password must be at least 6 characters.'
+                  : err.code === 'auth/invalid-email'
+                    ? 'Enter a valid email address.'
+                    : err.code === 'auth/operation-not-allowed'
+                      ? 'Email/password sign-in is disabled in Firebase Console.'
+                      : err.message || 'Something went wrong.'
+        setError(msg)
+      }
     } finally {
       setBusy(false)
     }

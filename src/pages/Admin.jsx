@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ref, onValue, remove, update } from 'firebase/database'
+import { ref, onValue, remove, update, set } from 'firebase/database'
 import { database } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { isAdminUser, isAdminUsername, publicDisplayName } from '../utils/admin'
+
+function emailKey(email) {
+  return String(email || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\./g, ',')
+}
 
 export default function Admin() {
   const { user, loading } = useAuth()
@@ -92,12 +99,18 @@ export default function Admin() {
     }
   }
 
-  const banUser = async (uid, username) => {
+  const banUser = async (uid, username, email) => {
     if (isAdminUsername(username)) {
       alert('Cannot ban the Sicack support account')
       return
     }
-    if (!confirm(`Ban ${username}? They will be flagged in the database.`)) return
+    if (
+      !confirm(
+        `Ban ${username}? They will be signed out and cannot log in or create a new account with the same email.`
+      )
+    ) {
+      return
+    }
     setBusyId(uid)
     try {
       await update(ref(database, `users/${uid}`), {
@@ -105,6 +118,10 @@ export default function Admin() {
         bannedAt: Date.now(),
         bannedBy: 'Sicack Support',
       })
+      // Email ban list — blocks login even if they clear cookies
+      if (email) {
+        await set(ref(database, `bannedEmails/${emailKey(email)}`), true)
+      }
     } catch (e) {
       alert('Failed: ' + e.message)
     } finally {
@@ -112,7 +129,7 @@ export default function Admin() {
     }
   }
 
-  const unbanUser = async (uid) => {
+  const unbanUser = async (uid, email) => {
     setBusyId(uid)
     try {
       await update(ref(database, `users/${uid}`), {
@@ -120,6 +137,9 @@ export default function Admin() {
         bannedAt: null,
         bannedBy: null,
       })
+      if (email) {
+        await remove(ref(database, `bannedEmails/${emailKey(email)}`))
+      }
     } catch (e) {
       alert('Failed: ' + e.message)
     } finally {
@@ -266,7 +286,7 @@ export default function Admin() {
                                 type="button"
                                 className="btn btn-primary btn-sm"
                                 disabled={busyId === u.uid}
-                                onClick={() => unbanUser(u.uid)}
+                                onClick={() => unbanUser(u.uid, u.email)}
                               >
                                 Unban
                               </button>
@@ -275,7 +295,7 @@ export default function Admin() {
                                 type="button"
                                 className="btn btn-danger btn-sm"
                                 disabled={busyId === u.uid}
-                                onClick={() => banUser(u.uid, u.username)}
+                                onClick={() => banUser(u.uid, u.username, u.email)}
                               >
                                 Ban
                               </button>
