@@ -68,7 +68,7 @@ export default function Login() {
       <div className="auth-card">
         <div className="auth-brand">
           <img
-            src={`${import.meta.env.BASE_URL}logo.svg`}
+            src={`${import.meta.env.BASE_URL}logo.png`}
             alt=""
             className="auth-logo-img"
             width={56}

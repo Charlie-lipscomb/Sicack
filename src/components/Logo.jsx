@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
 
-/** Brand mark — uses public/logo.svg (champagne gold hex monogram) */
+/** Brand mark — uses public/logo.png */
 export default function Logo({ size = 32, showWordmark = true, to = '/', className = '' }) {
   const img = (
     <img
-      src={`${import.meta.env.BASE_URL}logo.svg`}
+      src={`${import.meta.env.BASE_URL}logo.png`}
       alt=""
       width={size}
       height={size}
