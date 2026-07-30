@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom'
+import { logoUrl } from '../utils/brand'
 
-/** Brand mark — uses public/logo.png */
-export default function Logo({ size = 32, showWordmark = true, to = '/', className = '' }) {
+export default function Logo({ size = 36, showWordmark = true, to = '/', className = '' }) {
   const img = (
     <img
-      src={`${import.meta.env.BASE_URL}logo.png`}
+      src={logoUrl()}
       alt=""
       width={size}
       height={size}
       className="logo-img"
       draggable={false}
+      decoding="async"
     />
   )
 
@@ -24,7 +25,7 @@ export default function Logo({ size = 32, showWordmark = true, to = '/', classNa
   }
 
   return (
-    <Link to={to} className={`logo ${className}`}>
+    <Link to={to} className={`logo ${className}`} aria-label="Sicack home">
       {img}
       <span className="logo-text">Sicack</span>
     </Link>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth, BannedError } from '../context/AuthContext'
+import { logoUrl } from '../utils/brand'
 
 export default function Login() {
   const [mode, setMode] = useState('login')
@@ -68,12 +69,13 @@ export default function Login() {
       <div className="auth-card">
         <div className="auth-brand">
           <img
-            src={`${import.meta.env.BASE_URL}logo.png`}
-            alt=""
+            src={logoUrl()}
+            alt="Sicack"
             className="auth-logo-img"
-            width={56}
-            height={56}
+            width={72}
+            height={72}
             draggable={false}
+            decoding="async"
           />
           <h1>Sicack</h1>
           <p>Communities that move with you</p>
