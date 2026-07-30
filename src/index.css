@@ -88,26 +88,38 @@ a:hover { color: var(--gold-light); }
 .logo {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
   text-decoration: none !important;
   color: var(--text) !important;
+}
+
+.logo:hover .logo-img {
+  filter: drop-shadow(0 0 10px rgba(201, 162, 39, 0.45));
+  transform: scale(1.04);
 }
 
 .logo-img {
   display: block;
   flex-shrink: 0;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
+  border-radius: 10px;
+  transition: filter 0.2s ease, transform 0.2s ease;
 }
 
 .logo-text {
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--text);
   background: linear-gradient(135deg, #f5f0e8 0%, #e8d5a3 55%, #c9a227 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+@media (max-width: 420px) {
+  .logo-text { display: none; }
 }
 
 .nav-links {
@@ -729,9 +741,12 @@ a:hover { color: var(--gold-light); }
 
 .auth-logo-img {
   display: block;
-  margin: 0 auto 14px;
-  width: 56px;
-  height: 56px;
+  margin: 0 auto 16px;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 16px;
+  filter: drop-shadow(0 4px 16px rgba(201, 162, 39, 0.35));
 }
 
 .auth-brand h1 {
