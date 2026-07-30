@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 
@@ -16,7 +17,9 @@ if (!rootEl) {
       <ErrorBoundary>
         <HashRouter>
           <AuthProvider>
-            <App />
+            <ToastProvider>
+              <App />
+            </ToastProvider>
           </AuthProvider>
         </HashRouter>
       </ErrorBoundary>

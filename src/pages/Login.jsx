@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth, BannedError } from '../context/AuthContext'
 import { logoUrl } from '../utils/brand'
+import { useToast } from '../context/ToastContext'
 
 export default function Login() {
   const [mode, setMode] = useState('login')
@@ -10,7 +11,9 @@ export default function Login() {
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const { login, signup, user, banNotice, clearBanNotice } = useAuth()
+  const [resetSent, setResetSent] = useState(false)
+  const { login, signup, resetPassword, user, banNotice, clearBanNotice } = useAuth()
+  const { toast } = useToast()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -29,14 +32,21 @@ export default function Login() {
     setError('')
     setBusy(true)
     try {
-      if (mode === 'signup') {
+      if (mode === 'reset') {
+        await resetPassword(email.trim())
+        setResetSent(true)
+        toast('Password reset email sent', 'success')
+      } else if (mode === 'signup') {
         if (!username.trim()) throw new Error('Choose a display name')
         if (password.length < 6) throw new Error('Password must be at least 6 characters')
         await signup(email.trim(), password, username.trim())
+        toast('Welcome to Sicack', 'success')
+        navigate('/')
       } else {
         await login(email.trim(), password)
+        toast('Signed in', 'success')
+        navigate('/')
       }
-      navigate('/')
     } catch (err) {
       if (err instanceof BannedError || err.code === 'sicack/banned') {
         setError(err.message)
@@ -54,7 +64,9 @@ export default function Login() {
                     ? 'Enter a valid email address.'
                     : err.code === 'auth/operation-not-allowed'
                       ? 'Email/password sign-in is disabled in Firebase Console.'
-                      : err.message || 'Something went wrong.'
+                      : err.code === 'auth/too-many-requests'
+                        ? 'Too many attempts. Try again later.'
+                        : err.message || 'Something went wrong.'
         setError(msg)
       }
     } finally {
@@ -81,22 +93,37 @@ export default function Login() {
           <p>Communities that move with you</p>
         </div>
 
-        <div className="auth-tabs">
-          <button
-            type="button"
-            className={mode === 'login' ? 'active' : ''}
-            onClick={() => { setMode('login'); setError('') }}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            className={mode === 'signup' ? 'active' : ''}
-            onClick={() => { setMode('signup'); setError('') }}
-          >
-            Create account
-          </button>
-        </div>
+        {mode !== 'reset' ? (
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={mode === 'login' ? 'active' : ''}
+              onClick={() => {
+                setMode('login')
+                setError('')
+                setResetSent(false)
+              }}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              className={mode === 'signup' ? 'active' : ''}
+              onClick={() => {
+                setMode('signup')
+                setError('')
+                setResetSent(false)
+              }}
+            >
+              Create account
+            </button>
+          </div>
+        ) : (
+          <div className="auth-reset-title">
+            <h2>Reset password</h2>
+            <p>We’ll email you a link to choose a new password.</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="auth-form">
           {mode === 'signup' && (
@@ -126,29 +153,65 @@ export default function Login() {
               autoComplete="email"
             />
           </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={mode === 'signup' ? 'At least 6 characters' : 'Your password'}
-              required
-              minLength={6}
-              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-            />
-          </div>
+          {mode !== 'reset' && (
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={mode === 'signup' ? 'At least 6 characters' : 'Your password'}
+                required
+                minLength={6}
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              />
+            </div>
+          )}
 
           {error && <div className="auth-error">{error}</div>}
+          {resetSent && mode === 'reset' && (
+            <div className="auth-success">Check your inbox for the reset link.</div>
+          )}
 
           <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
-            {busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}
+            {busy
+              ? 'Please wait…'
+              : mode === 'signup'
+                ? 'Create account'
+                : mode === 'reset'
+                  ? 'Send reset link'
+                  : 'Sign in'}
           </button>
         </form>
 
         <p className="auth-footer">
-          <Link to="/">← Back to feed</Link>
+          {mode === 'login' ? (
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() => {
+                setMode('reset')
+                setError('')
+                setResetSent(false)
+              }}
+            >
+              Forgot password?
+            </button>
+          ) : mode === 'reset' ? (
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() => {
+                setMode('login')
+                setError('')
+              }}
+            >
+              ← Back to sign in
+            </button>
+          ) : (
+            <Link to="/">← Back to feed</Link>
+          )}
         </p>
       </div>
     </div>
