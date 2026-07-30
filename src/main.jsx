@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
+import './extras.css'
 
 const rootEl = document.getElementById('root')
 
