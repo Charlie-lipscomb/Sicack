@@ -1,0 +1,17 @@
+{
+  "name": "Sicack",
+  "short_name": "Sicack",
+  "description": "Communities, posts, and messages",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a0908",
+  "theme_color": "#0a0908",
+  "icons": [
+    {
+      "src": "./F45885C9-39DA-4B67-A1D1-F292D6B83525.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

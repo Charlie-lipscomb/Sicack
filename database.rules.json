@@ -1,0 +1,62 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    "users": {
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && auth.uid == $uid && (!data.child('banned').val() || data.child('banned').val() == false)",
+        "banned": {
+          ".write": false
+        }
+      }
+    },
+    "usernames": {
+      ".read": true,
+      "$name": {
+        ".write": "auth != null && (!data.exists() || data.val() == auth.uid)"
+      }
+    },
+    "emails": {
+      ".read": "auth != null",
+      "$key": {
+        ".write": "auth != null"
+      }
+    },
+    "bannedEmails": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "posts": {
+      ".read": true,
+      "$postId": {
+        ".write": "auth != null && (!root.child('users').child(auth.uid).child('banned').val()) && (newData.exists() || data.child('authorId').val() == auth.uid)"
+      }
+    },
+    "comments": {
+      ".read": true,
+      "$postId": {
+        "$commentId": {
+          ".write": "auth != null && (!root.child('users').child(auth.uid).child('banned').val())"
+        }
+      }
+    },
+    "communities": {
+      ".read": true,
+      "$id": {
+        ".write": "auth != null && (!root.child('users').child(auth.uid).child('banned').val())"
+      }
+    },
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!root.child('users').child(auth.uid).child('banned').val())"
+      }
+    },
+    "userChats": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null"
+      }
+    }
+  }
+}
