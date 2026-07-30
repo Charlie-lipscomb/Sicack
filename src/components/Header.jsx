@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { isAdminUser, publicDisplayName } from '../utils/admin'
 import { useUnreadCount } from '../hooks/useUnread'
+import Logo from './Logo'
 
 export default function Header() {
   const { user, logout, loading } = useAuth()
@@ -11,10 +12,7 @@ export default function Header() {
   return (
     <header className="header">
       <div className="header-inner">
-        <Link to="/" className="logo">
-          <span className="logo-mark" aria-hidden="true">S</span>
-          <span className="logo-text">Sicack</span>
-        </Link>
+        <Logo size={34} />
 
         <nav className="nav-links">
           {loading ? (

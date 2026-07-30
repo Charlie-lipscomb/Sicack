@@ -67,7 +67,14 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-brand">
-          <span className="auth-logo">S</span>
+          <img
+            src={`${import.meta.env.BASE_URL}logo.svg`}
+            alt=""
+            className="auth-logo-img"
+            width={56}
+            height={56}
+            draggable={false}
+          />
           <h1>Sicack</h1>
           <p>Communities that move with you</p>
         </div>

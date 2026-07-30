@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8D5A3"/>
+      <stop offset="45%" stop-color="#C9A227"/>
+      <stop offset="100%" stop-color="#A67C2D"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer hexagon -->
+  <path
+    d="M60 8 L104 33 L104 87 L60 112 L16 87 L16 33 Z"
+    stroke="url(#gold)"
+    stroke-width="7"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <!-- Interlocking S ribbon -->
+  <path
+    d="M38 40
+       C38 28 52 24 62 30
+       C72 36 78 42 72 52
+       C66 62 48 64 42 74
+       C36 84 44 96 60 96
+       C76 96 84 86 84 78"
+    stroke="url(#gold)"
+    stroke-width="9"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <path
+    d="M82 42
+       C82 54 68 58 58 52
+       C48 46 42 40 48 30"
+    stroke="url(#gold)"
+    stroke-width="9"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    opacity="0.85"
+  />
+</svg>
