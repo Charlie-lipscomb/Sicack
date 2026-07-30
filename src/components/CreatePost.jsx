@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCommunities } from '../hooks/useCommunities'
+import { useToast } from '../context/ToastContext'
 
 export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
   const { user } = useAuth()
+  const { toast } = useToast()
   const { communities } = useCommunities()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const [community, setCommunity] = useState(defaultCommunity)
   const [submitting, setSubmitting] = useState(false)
   const [open, setOpen] = useState(false)
@@ -19,7 +22,7 @@ export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
 
   if (!user) {
     return (
-      <div className="create-post create-locked animate-in">
+      <div className="create-post create-locked">
         <p>
           <Link to="/login">Sign in</Link> to share something with the community.
         </p>
@@ -35,6 +38,7 @@ export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
       await onPostCreated({
         title: title.trim(),
         body: body.trim(),
+        imageUrl: imageUrl.trim(),
         community: community.toLowerCase(),
         author: user.username,
         authorId: user.uid,
@@ -42,7 +46,11 @@ export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
       })
       setTitle('')
       setBody('')
+      setImageUrl('')
       setOpen(false)
+      toast('Post published', 'success')
+    } catch (err) {
+      toast(err.message || 'Could not publish', 'error')
     } finally {
       setSubmitting(false)
     }
@@ -50,7 +58,7 @@ export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
 
   if (!open) {
     return (
-      <button type="button" className="create-trigger animate-in" onClick={() => setOpen(true)}>
+      <button type="button" className="create-trigger" onClick={() => setOpen(true)}>
         <span className="create-plus">+</span>
         Start a conversation…
       </button>
@@ -58,7 +66,7 @@ export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
   }
 
   return (
-    <div className="create-post animate-in">
+    <div className="create-post">
       <div className="create-head">
         <h2>New post</h2>
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>
@@ -104,6 +112,17 @@ export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
             placeholder="Add more context…"
             rows={4}
           />
+        </div>
+        <div className="form-group">
+          <label htmlFor="imageUrl">Image URL (optional)</label>
+          <input
+            id="imageUrl"
+            type="url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://…"
+          />
+          <span className="field-hint">Paste a direct link to an image</span>
         </div>
         <button type="submit" className="btn btn-primary" disabled={submitting || !community}>
           {submitting ? 'Publishing…' : 'Publish'}

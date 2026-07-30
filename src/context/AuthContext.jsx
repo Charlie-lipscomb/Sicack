@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
   signOut,
+  sendPasswordResetEmail,
 } from 'firebase/auth'
 import { ref, set, get, update } from 'firebase/database'
 import { auth, database } from '../firebase'
@@ -39,7 +40,6 @@ async function isUserBanned(uid) {
   return snap.exists() && snap.val() === true
 }
 
-/** Merge profile fields without wiping banned / other moderation data */
 async function syncUserIndexes(uid, username, email) {
   if (!uid) return
   const name = (username || 'member').trim()
@@ -68,7 +68,6 @@ export function AuthProvider({ children }) {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          // Email ban list (survives even if profile is messy)
           if (await isEmailBanned(firebaseUser.email)) {
             await signOut(auth)
             setUser(null)
@@ -88,14 +87,12 @@ export function AuthProvider({ children }) {
           const username =
             firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'member'
 
-          // Sync indexes only — does not clear banned flag
           try {
             await syncUserIndexes(firebaseUser.uid, username, firebaseUser.email)
           } catch (e) {
             console.warn('[Sicack] could not sync user index', e.message)
           }
 
-          // Re-check after sync in case of race
           if (await isUserBanned(firebaseUser.uid) || await isEmailBanned(firebaseUser.email)) {
             await signOut(auth)
             setUser(null)
@@ -144,9 +141,10 @@ export function AuthProvider({ children }) {
     const cred = await createUserWithEmailAndPassword(auth, mail, password)
     await updateProfile(cred.user, { displayName: cleanName })
     await syncUserIndexes(cred.user.uid, cleanName, mail)
-
-    // Ensure banned starts false for new accounts
-    await update(ref(database, `users/${cred.user.uid}`), { banned: false })
+    await update(ref(database, `users/${cred.user.uid}`), {
+      banned: false,
+      createdAt: Date.now(),
+    })
 
     setUser({
       uid: cred.user.uid,
@@ -176,7 +174,6 @@ export function AuthProvider({ children }) {
 
     await syncUserIndexes(cred.user.uid, username, cred.user.email)
 
-    // Final check — ban must survive sync
     if (await isUserBanned(cred.user.uid)) {
       await signOut(auth)
       throw new BannedError()
@@ -191,6 +188,12 @@ export function AuthProvider({ children }) {
     return cred.user
   }
 
+  const resetPassword = async (email) => {
+    const mail = email.trim().toLowerCase()
+    if (!mail) throw new Error('Enter your email address')
+    await sendPasswordResetEmail(auth, mail)
+  }
+
   const logout = async () => {
     await signOut(auth)
     setUser(null)
@@ -200,7 +203,16 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, signup, logout, loading, banNotice, clearBanNotice }}
+      value={{
+        user,
+        login,
+        signup,
+        logout,
+        resetPassword,
+        loading,
+        banNotice,
+        clearBanNotice,
+      }}
     >
       {children}
     </AuthContext.Provider>
