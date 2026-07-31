@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
 import { publicDisplayName } from '../utils/admin'
 import { timeAgo } from '../utils/time'
+import { truncate } from '../utils/format'
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, commentCount = 0 }) {
   const community = post.community || post.forum || 'general'
   const author = publicDisplayName(post.author)
   const authorSlug = encodeURIComponent(post.author || 'member')
@@ -18,7 +19,9 @@ export default function PostCard({ post }) {
           {author}
         </Link>
         <span className="meta-sep" />
-        <span>{timeAgo(post.createdAt)}</span>
+        <time dateTime={post.createdAt ? new Date(post.createdAt).toISOString() : undefined}>
+          {timeAgo(post.createdAt)}
+        </time>
       </div>
       <Link to={`/post/${post.id}`} className="post-title-link">
         <h2 className="post-title">{post.title}</h2>
@@ -28,14 +31,12 @@ export default function PostCard({ post }) {
           <img src={post.imageUrl} alt="" className="post-image" loading="lazy" />
         </Link>
       ) : null}
-      {post.body ? (
-        <p className="post-body">
-          {post.body.length > 220 ? post.body.slice(0, 220) + '…' : post.body}
-        </p>
-      ) : null}
+      {post.body ? <p className="post-body">{truncate(post.body, 200)}</p> : null}
       <div className="post-footer">
         <Link to={`/post/${post.id}`} className="post-reply-link">
-          Reply
+          {commentCount === 0
+            ? 'Reply'
+            : `${commentCount} ${commentCount === 1 ? 'reply' : 'replies'}`}
         </Link>
       </div>
     </article>
