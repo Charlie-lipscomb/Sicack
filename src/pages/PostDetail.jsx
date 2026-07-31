@@ -7,6 +7,7 @@ import { useComments } from '../hooks/useComments'
 import { publicDisplayName, isAdminUser } from '../utils/admin'
 import { timeAgo } from '../utils/time'
 import { useToast } from '../context/ToastContext'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export default function PostDetail() {
   const { postId } = useParams()
@@ -22,6 +23,8 @@ export default function PostDetail() {
   const [editBody, setEditBody] = useState('')
   const { comments, addComment, softDeleteComment } = useComments(postId)
 
+  useDocumentTitle(post?.title || (loading ? 'Post' : 'Not found'))
+
   useEffect(() => {
     if (!postId) return
     const unsub = onValue(ref(database, `posts/${postId}`), (snap) => {
@@ -36,6 +39,16 @@ export default function PostDetail() {
   }, [postId])
 
   const isOwner = user && post && (user.uid === post.authorId || isAdminUser(user))
+
+  const copyLink = async () => {
+    const url = window.location.href
+    try {
+      await navigator.clipboard.writeText(url)
+      toast('Link copied', 'success')
+    } catch {
+      toast('Could not copy link', 'error')
+    }
+  }
 
   const handleReply = async (e) => {
     e.preventDefault()
@@ -130,9 +143,14 @@ export default function PostDetail() {
 
   return (
     <div className="post-detail">
-      <Link to="/" className="back-link">
-        ← Feed
-      </Link>
+      <div className="post-detail-nav">
+        <Link to="/" className="back-link">
+          ← Feed
+        </Link>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={copyLink}>
+          Copy link
+        </button>
+      </div>
 
       <article className="post-detail-card">
         <div className="post-meta">
@@ -176,20 +194,29 @@ export default function PostDetail() {
           <>
             <h1 className="post-detail-title">{post.title}</h1>
             {post.imageUrl ? (
-              <img src={post.imageUrl} alt="" className="post-detail-image" />
+              <a href={post.imageUrl} target="_blank" rel="noopener noreferrer">
+                <img src={post.imageUrl} alt="" className="post-detail-image" />
+              </a>
             ) : null}
             {post.body ? <p className="post-detail-body">{post.body}</p> : null}
           </>
         )}
 
-        {isOwner && !editing ? (
+        {!editing ? (
           <div className="post-owner-actions">
-            <button type="button" className="btn btn-ghost btn-sm" onClick={startEdit}>
-              Edit
+            <button type="button" className="btn btn-ghost btn-sm" onClick={copyLink}>
+              Share
             </button>
-            <button type="button" className="btn btn-danger btn-sm" onClick={deletePost} disabled={busy}>
-              Delete
-            </button>
+            {isOwner ? (
+              <>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={startEdit}>
+                  Edit
+                </button>
+                <button type="button" className="btn btn-danger btn-sm" onClick={deletePost} disabled={busy}>
+                  Delete
+                </button>
+              </>
+            ) : null}
           </div>
         ) : null}
       </article>
@@ -209,10 +236,19 @@ export default function PostDetail() {
               placeholder="Write a reply…"
               rows={3}
               maxLength={2000}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                  e.preventDefault()
+                  if (reply.trim() && !busy) handleReply(e)
+                }
+              }}
             />
-            <button type="submit" className="btn btn-primary" disabled={busy || !reply.trim()}>
-              {busy ? 'Posting…' : 'Reply'}
-            </button>
+            <div className="reply-form-footer">
+              <span className="field-hint">⌘/Ctrl + Enter to send</span>
+              <button type="submit" className="btn btn-primary" disabled={busy || !reply.trim()}>
+                {busy ? 'Posting…' : 'Reply'}
+              </button>
+            </div>
           </form>
         ) : (
           <p className="reply-locked">

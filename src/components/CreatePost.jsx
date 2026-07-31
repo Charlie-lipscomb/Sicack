@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCommunities } from '../hooks/useCommunities'
 import { useToast } from '../context/ToastContext'
+import { isValidHttpUrl } from '../utils/format'
 
 export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
   const { user } = useAuth()
@@ -33,12 +34,17 @@ export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!title.trim() || !community) return
+    const img = imageUrl.trim()
+    if (img && !isValidHttpUrl(img)) {
+      toast('Image must be a valid http(s) URL', 'error')
+      return
+    }
     setSubmitting(true)
     try {
       await onPostCreated({
         title: title.trim(),
         body: body.trim(),
-        imageUrl: imageUrl.trim(),
+        imageUrl: img,
         community: community.toLowerCase(),
         author: user.username,
         authorId: user.uid,
@@ -60,7 +66,10 @@ export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
     return (
       <button type="button" className="create-trigger" onClick={() => setOpen(true)}>
         <span className="create-plus">+</span>
-        Start a conversation…
+        <span className="create-trigger-text">
+          <strong>New post</strong>
+          <span>Share something with the network</span>
+        </span>
       </button>
     )
   }
@@ -122,7 +131,10 @@ export default function CreatePost({ onPostCreated, defaultCommunity = '' }) {
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="https://…"
           />
-          <span className="field-hint">Paste a direct link to an image</span>
+          <span className="field-hint">Direct link to an image (https)</span>
+          {imageUrl && isValidHttpUrl(imageUrl.trim()) ? (
+            <img src={imageUrl.trim()} alt="" className="image-preview" />
+          ) : null}
         </div>
         <button type="submit" className="btn btn-primary" disabled={submitting || !community}>
           {submitting ? 'Publishing…' : 'Publish'}
